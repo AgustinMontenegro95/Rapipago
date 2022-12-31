@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "entidades")
+@SqlResultSetMapping(name = "clienteDTOMapping", classes = @ConstructorResult(targetClass = ar.com.dinamicaonline.rapipago.dto.ClienteDto.class, columns = {
+        @ColumnResult(name = "NOMBRE", type = String.class),
+        @ColumnResult(name = "APELLIDO", type = String.class) }))
+
+@NamedNativeQuery(name = "Entidad.obtenerNombreApellido", resultClass = ar.com.dinamicaonline.rapipago.dto.ClienteDto.class, resultSetMapping = "clienteDTOMapping", query = "SELECT NOMBRE, APELLIDO FROM entidades WHERE DOCUMENTO = :documento LIMIT 1")
 public class Entidad {
     @Id
     @Column(name = "ENTIDAD_ID")

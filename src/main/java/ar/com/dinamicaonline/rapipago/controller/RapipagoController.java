@@ -4,11 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.com.dinamicaonline.rapipago.dto.ConsultaDto;
 import ar.com.dinamicaonline.rapipago.dto.PagoDto;
 import ar.com.dinamicaonline.rapipago.models.ReceiveAndSend;
 import ar.com.dinamicaonline.rapipago.service.ReceiveAndSendService;
@@ -19,6 +21,16 @@ public class RapipagoController {
 
     @Autowired
     private ReceiveAndSendService receiveAndSendService;
+
+    @RequestMapping(value = "/consulta", method = RequestMethod.POST)
+    public ResponseEntity<?> obtenerConsulta(@RequestBody ConsultaDto consultaDto) {
+        return receiveAndSendService.saveReceiveAndSend(consultaDto);
+    }
+
+    @RequestMapping(value = "/pago1", method = RequestMethod.POST)
+    public ResponseEntity<?> obtenerPago(@RequestBody PagoDto pagoDto) {
+        return receiveAndSendService.saveReceiveAndSend(pagoDto);
+    }
 
     @RequestMapping(value = "/pago", method = RequestMethod.POST)
     public Map<String, Object> getState(@RequestBody PagoDto pagoDto) {
@@ -46,4 +58,5 @@ public class RapipagoController {
 
         return map;
     }
+
 }
