@@ -30,19 +30,19 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
     @Override
     public ResponseEntity<?> saveReceiveAndSend(PagoDto pagoDto) {
         int idOrigin = 7; // 7 por tabla api_ReceiveAndSendOrigin
-        ReceiveAndSend receiveAndSend = new ReceiveAndSend();
         Map<String, Object> responseBody = new HashMap<>();
 
         if (Validation.validationAvisoDto(pagoDto)) {
             // obtengo el idAccount necesario para api_ReceiveAndSend
             Long idAccount = entidadServiceImpl.fetchEntidadByDocumentId(pagoDto.getId_numero());
             // guardo consulta
-            receiveAndSend.setCreatedOn(Calendar.getInstance().getTime());
-            receiveAndSend.setIdAccount(idAccount);
-            receiveAndSend.setIdOrigin(idOrigin);
-            receiveAndSend.setReceiveSend(1);
-            receiveAndSend.setMessagge(pagoDto.toString());
-            receiveAndSendRepository.save(receiveAndSend);
+            ReceiveAndSend rasConsulta = new ReceiveAndSend();
+            rasConsulta.setCreatedOn(Calendar.getInstance().getTime());
+            rasConsulta.setIdAccount(idAccount);
+            rasConsulta.setIdOrigin(idOrigin);
+            rasConsulta.setReceiveSend(1);
+            rasConsulta.setMessagge(pagoDto.toString());
+            receiveAndSendRepository.save(rasConsulta);
             if (idAccount != null) {
                 // proc_cash_in_app
                 double QPAGO = Double.parseDouble(pagoDto.getImporte());
@@ -58,11 +58,11 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
                 responseBody.put("codigo_respuesta", "0");
                 responseBody.put("msg", "Trx ok");
                 // guardo respuesta
-                ReceiveAndSend receiveAndSend2 = new ReceiveAndSend();
-                receiveAndSend2.setCreatedOn(Calendar.getInstance().getTime());
-                receiveAndSend2.setIdAccount(QID_ENTIDAD);
-                receiveAndSend2.setIdOrigin(idOrigin);
-                receiveAndSend2.setReceiveSend(2);
+                ReceiveAndSend rasRespuesta = new ReceiveAndSend();
+                rasRespuesta.setCreatedOn(Calendar.getInstance().getTime());
+                rasRespuesta.setIdAccount(QID_ENTIDAD);
+                rasRespuesta.setIdOrigin(idOrigin);
+                rasRespuesta.setReceiveSend(2);
                 String resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
                         + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
                         + "\", \"barra\":\"" + pagoDto.getBarra()
@@ -70,27 +70,28 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
                         + "\", \"codigo_respuesta\":\"" + "0"
                         + "\", \"msg\":\"" + "Trx ok"
                         + "\"}";
-                receiveAndSend2.setMessagge("{\"resultado\":" + resProcCashInApp
+                rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
                         + ", \"respuesta\": " + resBody
                         + ", \"idNumero\": \"" + pagoDto.getId_numero()
                         + "\", \"importe\": \"" + pagoDto.getImporte()
                         + "\"}");
-                receiveAndSendRepository.save(receiveAndSend2);
+                receiveAndSendRepository.save(rasRespuesta);
                 return new ResponseEntity<>(responseBody, HttpStatus.OK);
             } else {
                 // No existe el id/dni
-                // creo la respuesta a la llamada /consulta
+                // creo la respuesta a la llamada /pago
                 responseBody.put("id_numero", pagoDto.getId_numero());
                 responseBody.put("cod_trx", pagoDto.getCod_trx());
                 responseBody.put("barra", pagoDto.getBarra());
                 responseBody.put("fecha_hora_operacion", pagoDto.getFecha_hora_operacion());
                 responseBody.put("codigo_respuesta", "9");
-                responseBody.put("msg", "Parámetros incorrectos o faltantes");
+                responseBody.put("msg", "Parametros incorrectos o faltantes");
                 // guardo respuesta
-                receiveAndSend.setCreatedOn(Calendar.getInstance().getTime());
-                receiveAndSend.setIdAccount(null);
-                receiveAndSend.setIdOrigin(idOrigin);
-                receiveAndSend.setReceiveSend(2);
+                ReceiveAndSend rasError = new ReceiveAndSend();
+                rasError.setCreatedOn(Calendar.getInstance().getTime());
+                rasError.setIdAccount(null);
+                rasError.setIdOrigin(idOrigin);
+                rasError.setReceiveSend(2);
                 String resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
                         + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
                         + "\", \"barra\":\"" + pagoDto.getBarra()
@@ -98,64 +99,16 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
                         + "\", \"codigo_respuesta\":\"" + "9"
                         + "\", \"msg\":\"" + "Parámetros incorrectos o faltantes"
                         + "\"}";
-                receiveAndSend.setMessagge(
-                        "{\"error\":\"documento no encontrado\", \"solicitud\":" + pagoDto.toString()
-                                + ", \"respuesta\":" + resBody + "}");
-                receiveAndSendRepository.save(receiveAndSend);
+                rasError.setMessagge(
+                        "{\"resultado\":\"documento no encontrado\", \"respuesta\":" + resBody + "}");
+                receiveAndSendRepository.save(rasError);
                 return new ResponseEntity<>(responseBody, HttpStatus.OK);
             }
 
         } else {
-
-        }
-
-        return null;
-    }
-
-    @Override
-    public boolean saveReceiveAndSend(ReceiveAndSend receiveAndSend, PagoDto pagoDto) {
-        int idOrigin = 7; // 7 por tabla api_ReceiveAndSendOrigin
-
-        if (Validation.validationAvisoDto(pagoDto)) {
-            Long idAccount = entidadServiceImpl.fetchEntidadByDocumentId(pagoDto.getId_numero());
-            if (idAccount != null) {
-                // receiveAndSend.setId();
-                receiveAndSend.setCreatedOn(Calendar.getInstance().getTime());
-                receiveAndSend.setIdAccount(idAccount);
-                receiveAndSend.setIdOrigin(idOrigin);
-                receiveAndSend.setReceiveSend(1);
-                receiveAndSend.setMessagge(pagoDto.toString());
-                receiveAndSendRepository.save(receiveAndSend);
-                //
-                // proc_cash_in_app
-                double QPAGO = Double.parseDouble(pagoDto.getImporte());
-                String QORIGEN = "pagofacil";
-                Long QID_ENTIDAD = idAccount;
-                // llamada a procedimiento para registrar el pago
-                String resProcCashInApp = entidadServiceImpl.ingresoDineroProc(QID_ENTIDAD, QPAGO, QORIGEN);
-                ReceiveAndSend receiveAndSend2 = new ReceiveAndSend();
-                receiveAndSend2.setCreatedOn(Calendar.getInstance().getTime());
-                receiveAndSend2.setIdAccount(QID_ENTIDAD);
-                receiveAndSend2.setIdOrigin(idOrigin);
-                receiveAndSend2.setReceiveSend(2);
-                receiveAndSend2.setMessagge("{\"result\":" + resProcCashInApp + ", \"idNumero\": \""
-                        + pagoDto.getId_numero() + "\", \"importe\": \"" + pagoDto.getImporte() + "\"}");
-                receiveAndSendRepository.save(receiveAndSend2);
-            } else {
-                // No existe el id/dni
-                // receiveAndSend.setId();
-                receiveAndSend.setCreatedOn(Calendar.getInstance().getTime());
-                receiveAndSend.setIdAccount(null);
-                receiveAndSend.setIdOrigin(idOrigin);
-                receiveAndSend.setReceiveSend(2);
-                receiveAndSend.setMessagge(
-                        "{\"error\":\"Documento no encontrado\", \"request\":" + pagoDto.toString() + "}");
-                receiveAndSendRepository.save(receiveAndSend);
-            }
-            return true;
-        } else {
-            // error guardar consulta
-            return false;
+            responseBody.put("codigo_respuesta", "9");
+            responseBody.put("msg", "Parametros incorrectos o faltantes");
+            return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -262,9 +215,10 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
                 return new ResponseEntity<>(responseBody, HttpStatus.OK);
             }
         } else {
-            // error al validar los datos de la consulta
+            responseBody.put("codigo_respuesta", "9");
+            responseBody.put("msg", "Parametros incorrectos o faltantes");
+            return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
         }
-        return null;
     }
 
 }
