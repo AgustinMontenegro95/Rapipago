@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.com.dinamicaonline.rapipago.dto.ConsultaDto;
 import ar.com.dinamicaonline.rapipago.dto.PagoDto;
+import ar.com.dinamicaonline.rapipago.dto.ReversaDto;
 import ar.com.dinamicaonline.rapipago.service.ReceiveAndSendService;
 
 @RestController
@@ -26,6 +27,11 @@ public class RapipagoController {
     @RequestMapping(value = "/pago", method = RequestMethod.POST)
     public ResponseEntity<?> obtenerPago(@RequestBody PagoDto pagoDto) {
         return receiveAndSendService.saveReceiveAndSend(pagoDto);
+    }
+
+    @RequestMapping(value = "/reversa", method = RequestMethod.POST)
+    public ResponseEntity<?> obtenerReversa(@RequestBody ReversaDto reversaDto) {
+        return receiveAndSendService.saveReceiveAndSend(reversaDto);
     }
 
 }

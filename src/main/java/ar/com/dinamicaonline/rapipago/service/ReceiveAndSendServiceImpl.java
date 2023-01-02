@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import ar.com.dinamicaonline.rapipago.dto.ClienteDto;
 import ar.com.dinamicaonline.rapipago.dto.ConsultaDto;
 import ar.com.dinamicaonline.rapipago.dto.PagoDto;
+import ar.com.dinamicaonline.rapipago.dto.ReversaDto;
 import ar.com.dinamicaonline.rapipago.models.ReceiveAndSend;
 import ar.com.dinamicaonline.rapipago.repositories.ReceiveAndSendRepository;
 import ar.com.dinamicaonline.rapipago.validations.Validation;
@@ -85,7 +86,7 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
                 responseBody.put("barra", pagoDto.getBarra());
                 responseBody.put("fecha_hora_operacion", pagoDto.getFecha_hora_operacion());
                 responseBody.put("codigo_respuesta", "9");
-                responseBody.put("msg", "Parametros incorrectos o faltantes");
+                responseBody.put("msg", "Parámetros incorrectos o faltantes");
                 // guardo respuesta
                 ReceiveAndSend rasError = new ReceiveAndSend();
                 rasError.setCreatedOn(Calendar.getInstance().getTime());
@@ -97,7 +98,7 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
                         + "\", \"barra\":\"" + pagoDto.getBarra()
                         + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
                         + "\", \"codigo_respuesta\":\"" + "9"
-                        + "\", \"msg\":\"" + "Parámetros incorrectos o faltantes"
+                        + "\", \"msg\":\"" + "Parametros incorrectos o faltantes"
                         + "\"}";
                 rasError.setMessagge(
                         "{\"resultado\":\"documento no encontrado\", \"respuesta\":" + resBody + "}");
@@ -107,7 +108,84 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
 
         } else {
             responseBody.put("codigo_respuesta", "9");
-            responseBody.put("msg", "Parametros incorrectos o faltantes");
+            responseBody.put("msg", "Parámetros incorrectos o faltantes");
+            return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> saveReceiveAndSend(ReversaDto reversaDto) {
+        int idOrigin = 7; // 7 por tabla api_ReceiveAndSendOrigin
+        Map<String, Object> responseBody = new HashMap<>();
+
+        if (Validation.validationReversaDto(reversaDto)) {
+            // obtengo el idAccount necesario para api_ReceiveAndSend
+            Long idAccount = entidadServiceImpl.fetchEntidadByDocumentId(reversaDto.getId_numero());
+            // guardo consulta
+            ReceiveAndSend rasConsulta = new ReceiveAndSend();
+            rasConsulta.setCreatedOn(Calendar.getInstance().getTime());
+            rasConsulta.setIdAccount(idAccount);
+            rasConsulta.setIdOrigin(idOrigin);
+            rasConsulta.setReceiveSend(1);
+            rasConsulta.setMessagge(reversaDto.toString());
+            receiveAndSendRepository.save(rasConsulta);
+            if (idAccount != null) {
+                responseBody.put("id_numero", reversaDto.getId_numero());
+                responseBody.put("cod_trx", reversaDto.getCod_trx());
+                responseBody.put("barra", reversaDto.getBarra());
+                responseBody.put("fecha_hora_operacion", reversaDto.getFecha_hora_operacion());
+                responseBody.put("codigo_respuesta", "5");
+                responseBody.put("msg", "Operación inválida");
+                // guardo respuesta
+                ReceiveAndSend rasRespuesta = new ReceiveAndSend();
+                rasRespuesta.setCreatedOn(Calendar.getInstance().getTime());
+                rasRespuesta.setIdAccount(idAccount);
+                rasRespuesta.setIdOrigin(idOrigin);
+                rasRespuesta.setReceiveSend(2);
+                String resBody = "{\"id_numero\":\"" + reversaDto.getId_numero()
+                        + "\", \"cod_trx\":\"" + reversaDto.getCod_trx()
+                        + "\", \"barra\":\"" + reversaDto.getBarra()
+                        + "\", \"fecha_hora_operacion\":\"" + reversaDto.getFecha_hora_operacion()
+                        + "\", \"codigo_respuesta\":\"" + "5"
+                        + "\", \"msg\":\"" + "Operacion invalida"
+                        + "\"}";
+                rasRespuesta.setMessagge("{\"respuesta\": " + resBody
+                        + ", \"idNumero\": \"" + reversaDto.getId_numero()
+                        + "\", \"importe\": \"" + reversaDto.getImporte()
+                        + "\"}");
+                receiveAndSendRepository.save(rasRespuesta);
+                return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+            } else {
+                // No existe el id/dni
+                // creo la respuesta a la llamada /reversa
+                responseBody.put("id_numero", reversaDto.getId_numero());
+                responseBody.put("cod_trx", reversaDto.getCod_trx());
+                responseBody.put("barra", reversaDto.getBarra());
+                responseBody.put("fecha_hora_operacion", reversaDto.getFecha_hora_operacion());
+                responseBody.put("codigo_respuesta", "9");
+                responseBody.put("msg", "Parámetros incorrectos o faltantes");
+                // guardo respuesta
+                ReceiveAndSend rasError = new ReceiveAndSend();
+                rasError.setCreatedOn(Calendar.getInstance().getTime());
+                rasError.setIdAccount(null);
+                rasError.setIdOrigin(idOrigin);
+                rasError.setReceiveSend(2);
+                String resBody = "{\"id_numero\":\"" + reversaDto.getId_numero()
+                        + "\", \"cod_trx\":\"" + reversaDto.getCod_trx()
+                        + "\", \"barra\":\"" + reversaDto.getBarra()
+                        + "\", \"fecha_hora_operacion\":\"" + reversaDto.getFecha_hora_operacion()
+                        + "\", \"codigo_respuesta\":\"" + "9"
+                        + "\", \"msg\":\"" + "Parametros incorrectos o faltantes"
+                        + "\"}";
+                rasError.setMessagge(
+                        "{\"resultado\":\"documento no encontrado\", \"respuesta\":" + resBody + "}");
+                receiveAndSendRepository.save(rasError);
+                return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+            }
+
+        } else {
+            responseBody.put("codigo_respuesta", "9");
+            responseBody.put("msg", "Parámetros incorrectos o faltantes");
             return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
         }
     }
