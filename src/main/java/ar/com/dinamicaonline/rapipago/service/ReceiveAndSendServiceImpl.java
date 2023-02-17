@@ -6,6 +6,9 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,35 +54,202 @@ public class ReceiveAndSendServiceImpl implements ReceiveAndSendService {
                 Long QID_ENTIDAD = idAccount;
                 // llamada a procedimiento para registrar el pago
                 String resProcCashInApp = entidadServiceImpl.ingresoDineroProc(QID_ENTIDAD, QPAGO, QORIGEN);
-                // creo la respuesta a la llamada /pago
+
+                System.out.println("Soy procCashInAPP: " + resProcCashInApp);
+                JSONParser parser = new JSONParser();
+                JSONObject json = new JSONObject();
+                try {
+                    json = (JSONObject) parser.parse(resProcCashInApp.toString());
+                } catch (ParseException e) {
+                    System.out.println("Error al decodificar respuesta de BIND");
+                    System.out.println(resProcCashInApp.toString());
+                }
+
+                // id del resultado de proc_cash_in_app
+                int id = Integer.parseInt(json.get("id").toString());
+                System.out.println("soy id: " + id);
+                
+                // empiezo a crear la respuesta a la llamada /pago
                 responseBody.put("id_numero", pagoDto.getId_numero());
                 responseBody.put("cod_trx", pagoDto.getCod_trx());
                 responseBody.put("barra", pagoDto.getBarra());
                 responseBody.put("fecha_hora_operacion", pagoDto.getFecha_hora_operacion());
-                responseBody.put("codigo_respuesta", "0");
-                responseBody.put("msg", "Trx ok");
-                // guardo respuesta
+                
+                // empiezo a crear la respuesta a la llamada /pago
+                String resBody;
                 ReceiveAndSend rasRespuesta = new ReceiveAndSend();
                 rasRespuesta.setCreatedOn(Calendar.getInstance().getTime());
                 rasRespuesta.setIdAccount(QID_ENTIDAD);
                 rasRespuesta.setIdOrigin(idOrigin);
                 rasRespuesta.setReceiveSend(2);
-                String resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
-                        + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
-                        + "\", \"barra\":\"" + pagoDto.getBarra()
-                        + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
-                        + "\", \"codigo_respuesta\":\"" + "0"
-                        + "\", \"msg\":\"" + "Trx ok"
-                        + "\"}";
-                rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
-                        + ", \"respuesta\": " + resBody
-                        + ", \"idNumero\": \"" + pagoDto.getId_numero()
-                        + "\", \"importe\": \"" + pagoDto.getImporte()
-                        + "\"}");
-                receiveAndSendRepository.save(rasRespuesta);
-                return new ResponseEntity<>(responseBody, HttpStatus.OK);
+
+                switch (id) {
+                    case 1:
+                    // mensaje: "Cobranza Exitosa"
+                        // termino la creación de la respuesta a la llamada /pago
+                        responseBody.put("codigo_respuesta", "0");
+                        responseBody.put("msg", "Cobranza Exitosa");
+                        // guardo respuesta
+                        resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
+                                + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
+                                + "\", \"barra\":\"" + pagoDto.getBarra()
+                                + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
+                                + "\", \"codigo_respuesta\":\"" + "0"
+                                + "\", \"msg\":\"" + "Cobranza Exitosa"
+                                + "\"}";
+                        rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
+                                + ", \"respuesta\": " + resBody
+                                + ", \"idNumero\": \"" + pagoDto.getId_numero()
+                                + "\", \"importe\": \"" + pagoDto.getImporte()
+                                + "\"}");
+                        receiveAndSendRepository.save(rasRespuesta);
+                        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+                    case 2:
+                        // aviso: "Pago aplicado por $ 1000"
+                        // termino la creación de la respuesta a la llamada /pago
+                        responseBody.put("codigo_respuesta", "0");
+                        responseBody.put("msg", "Cobranza Exitosa");
+                        // guardo respuesta
+                        rasRespuesta.setReceiveSend(2);
+                        resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
+                                + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
+                                + "\", \"barra\":\"" + pagoDto.getBarra()
+                                + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
+                                + "\", \"codigo_respuesta\":\"" + "0"
+                                + "\", \"msg\":\"" + "Cobranza Exitosa"
+                                + "\"}";
+                        rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
+                                + ", \"respuesta\": " + resBody
+                                + ", \"idNumero\": \"" + pagoDto.getId_numero()
+                                + "\", \"importe\": \"" + pagoDto.getImporte()
+                                + "\"}");
+                        receiveAndSendRepository.save(rasRespuesta);
+                        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+                    case 10:
+                        // mensaje: "Cobranza Judicial Exitosa. Pago aplicado por $ 1000" -- cobranza abogados
+                        // termino la creación de la respuesta a la llamada /pago
+                        responseBody.put("codigo_respuesta", "0");
+                        responseBody.put("msg", "Cobranza Exitosa");
+                        // guardo respuesta
+                        resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
+                                + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
+                                + "\", \"barra\":\"" + pagoDto.getBarra()
+                                + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
+                                + "\", \"codigo_respuesta\":\"" + "0"
+                                + "\", \"msg\":\"" + "Cobranza Exitosa"
+                                + "\"}";
+                        rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
+                                + ", \"respuesta\": " + resBody
+                                + ", \"idNumero\": \"" + pagoDto.getId_numero()
+                                + "\", \"importe\": \"" + pagoDto.getImporte()
+                                + "\"}");
+                        receiveAndSendRepository.save(rasRespuesta);
+                        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+                    case -4:
+                        // mensaje: "Medio no existe !!"
+                        // termino la creación de la respuesta a la llamada /pago
+                        responseBody.put("codigo_respuesta", "5");
+                        responseBody.put("msg", "Medio no existe !!");
+                        // guardo respuesta
+                        resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
+                                + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
+                                + "\", \"barra\":\"" + pagoDto.getBarra()
+                                + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
+                                + "\", \"codigo_respuesta\":\"" + "5"
+                                + "\", \"msg\":\"" + "Medio no existe !!"
+                                + "\"}";
+                        rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
+                                + ", \"respuesta\": " + resBody
+                                + ", \"idNumero\": \"" + pagoDto.getId_numero()
+                                + "\", \"importe\": \"" + pagoDto.getImporte()
+                                + "\"}");
+                        receiveAndSendRepository.save(rasRespuesta);
+                        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+                    case -5:
+                        // mensaje: "Depósito no habilitado"
+                        // termino la creación de la respuesta a la llamada /pago
+                        responseBody.put("codigo_respuesta", "5");
+                        responseBody.put("msg", "Depósito no habilitado");
+                        // guardo respuesta
+                        resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
+                                + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
+                                + "\", \"barra\":\"" + pagoDto.getBarra()
+                                + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
+                                + "\", \"codigo_respuesta\":\"" + "5"
+                                + "\", \"msg\":\"" + "Depósito no habilitado"
+                                + "\"}";
+                        rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
+                                + ", \"respuesta\": " + resBody
+                                + ", \"idNumero\": \"" + pagoDto.getId_numero()
+                                + "\", \"importe\": \"" + pagoDto.getImporte()
+                                + "\"}");
+                        receiveAndSendRepository.save(rasRespuesta);
+                        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+                    case -6:
+                        // mensaje: "Medio no disponible"
+                        // termino la creación de la respuesta a la llamada /pago
+                        responseBody.put("codigo_respuesta", "5");
+                        responseBody.put("msg", "Medio no disponible");
+                        // guardo respuesta
+                        resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
+                                + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
+                                + "\", \"barra\":\"" + pagoDto.getBarra()
+                                + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
+                                + "\", \"codigo_respuesta\":\"" + "5"
+                                + "\", \"msg\":\"" + "Medio no disponible"
+                                + "\"}";
+                        rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
+                                + ", \"respuesta\": " + resBody
+                                + ", \"idNumero\": \"" + pagoDto.getId_numero()
+                                + "\", \"importe\": \"" + pagoDto.getImporte()
+                                + "\"}");
+                        receiveAndSendRepository.save(rasRespuesta);
+                        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+                    case -7:
+                        // mensaje: "Importe de depósito supera el límite"
+                        // termino la creación de la respuesta a la llamada /pago
+                        responseBody.put("codigo_respuesta", "9");
+                        responseBody.put("msg", "Importe de depósito supera el límite");
+                        // guardo respuesta
+                        resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
+                                + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
+                                + "\", \"barra\":\"" + pagoDto.getBarra()
+                                + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
+                                + "\", \"codigo_respuesta\":\"" + "9"
+                                + "\", \"msg\":\"" + "Importe de depósito supera el límite"
+                                + "\"}";
+                        rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
+                                + ", \"respuesta\": " + resBody
+                                + ", \"idNumero\": \"" + pagoDto.getId_numero()
+                                + "\", \"importe\": \"" + pagoDto.getImporte()
+                                + "\"}");
+                        receiveAndSendRepository.save(rasRespuesta);
+                        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+                    case -8:
+                        // mensaje: "Importe de depósito inferior al mínimo"
+                        // termino la creación de la respuesta a la llamada /pago
+                        responseBody.put("codigo_respuesta", "9");
+                        responseBody.put("msg", "Importe de depósito inferior al mínimo");
+                        // guardo respuesta
+                        resBody = "{\"id_numero\":\"" + pagoDto.getId_numero()
+                                + "\", \"cod_trx\":\"" + pagoDto.getCod_trx()
+                                + "\", \"barra\":\"" + pagoDto.getBarra()
+                                + "\", \"fecha_hora_operacion\":\"" + pagoDto.getFecha_hora_operacion()
+                                + "\", \"codigo_respuesta\":\"" + "9"
+                                + "\", \"msg\":\"" + "Importe de depósito inferior al mínimo"
+                                + "\"}";
+                        rasRespuesta.setMessagge("{\"resultado\":" + resProcCashInApp
+                                + ", \"respuesta\": " + resBody
+                                + ", \"idNumero\": \"" + pagoDto.getId_numero()
+                                + "\", \"importe\": \"" + pagoDto.getImporte()
+                                + "\"}");
+                        receiveAndSendRepository.save(rasRespuesta);
+                        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+                    default:
+                        return null;
+                }
             } else {
-                // No existe el id/dni
+                // No existe el id/dni - (simula este id) -> { "id": 0, "mensaje": "Entidad NO existe" }
                 // creo la respuesta a la llamada /pago
                 responseBody.put("id_numero", pagoDto.getId_numero());
                 responseBody.put("cod_trx", pagoDto.getCod_trx());
